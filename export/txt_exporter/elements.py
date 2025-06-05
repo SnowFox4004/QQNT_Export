@@ -20,7 +20,7 @@ __all__ = [
     "RedPacket",
     "Application",
     "Call",
-    "Feed"
+    "Feed",
 ]
 
 
@@ -56,6 +56,7 @@ def readable_file_size(file_size):
     """
     return naturalsize(file_size, binary=True, format="%.2f") if file_size else None
 
+
 class Text:
     def __init__(self, element):
         self.text = element.text
@@ -74,13 +75,13 @@ class Image:
         self.file_path = element.imageFilePath
         self.file_url = element.imageUrlOrigin
 
-        self.cache_path = self._get_cache_path(element.original, element.md5HexStr)
+        self.cache_path = self._get_cache_path(element.original, element.md5HexStr.hex().upper())
 
         self.content = self._get_content()
 
     @staticmethod
     @lru_cache(maxsize=4096)
-    def _get_cache_path(original,md5HexStr):
+    def _get_cache_path(original, md5HexStr):
         def crc64(raw_str):
             _crc64_table = [0] * 256
             for i in range(256):
@@ -93,7 +94,9 @@ class Image:
                 value = _crc64_table[(ord(char) ^ value) & 255] ^ value >> 8
             return value
 
-        folder = "chatraw" if original else "chatimg"
+        # original == 0 指未发原图，图片存于chatraw
+        # original == 1 指发送原图，压缩后的图片存于chatimg,下载后原图存于chatraw
+        folder = "chatimg" if original else "chatraw"
         raw_str = f"{folder}:{md5HexStr}"
         crc64_value = crc64(raw_str)
         file_name = f"Cache_{crc64_value:x}"
@@ -101,10 +104,19 @@ class Image:
         return f"/{folder}/{file_name[-3:]}/{file_name}"
 
     def _get_content(self):
+<<<<<<< HEAD
         return (
             "[图片]",
             f"{self.text}{self.cache_path} {self.readable_size} {('\n' + self.file_path) if self.file_path else ''}\
 {('\n' + self.file_url) if self.file_url else ''}",
+=======
+        return "[图片]", "\n".join(
+            part for part in [
+                f"{self.text}{self.cache_path} {self.readable_size}",
+                self.file_path,
+                self.file_url
+            ] if part
+>>>>>>> upstream/main
         )
 
 
@@ -129,7 +141,13 @@ class Voice:
         self.content = self._get_content()
 
     def _get_content(self):
-        return "[语音]", f"{self.voice_len}″ {self.voice_text} {('\n' + self.file_name) or ''} {self.readable_size}"
+        return "[语音]", "\n".join(
+            part for part in [
+                f"{self.voice_len}″ {self.voice_text}",
+                self.file_name,
+                self.readable_size
+            ] if part
+        )
 
 
 class Video:
@@ -141,14 +159,20 @@ class Video:
 
         self.content = self._get_content()
 
-    def _seconds_to_hms(self, seconds):
+    @staticmethod
+    def _seconds_to_hms(seconds):
         hours, remainder = divmod(seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
 
         return f"{hours:02}:{minutes:02}:{seconds:02}"
 
     def _get_content(self):
-        return "[视频]", f"{self.formated_video_len} {self.file_name} {self.readable_size} {('\n' + self.path) or ''}"
+        return "[视频]", "\n".join(
+            part for part in [
+                f"{self.formated_video_len} {self.file_name} {self.readable_size}",
+                self.path
+            ] if part
+        )
 
 
 class Emoji:
@@ -235,4 +259,10 @@ class Feed:
         self.content = self._get_content()
 
     def _get_content(self):
-        return "[动态消息]", f"{self.title}{('\n' + self.feed_content) or ''}{('\n' + self.url) or ''}"
+        return "[动态消息]", "\n".join(
+            part for part in [
+                self.title,
+                self.feed_content,
+                self.url
+            ] if part
+        )
