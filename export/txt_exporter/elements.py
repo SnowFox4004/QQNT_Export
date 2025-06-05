@@ -104,19 +104,14 @@ class Image:
         return f"/{folder}/{file_name[-3:]}/{file_name}"
 
     def _get_content(self):
-<<<<<<< HEAD
-        return (
-            "[图片]",
-            f"{self.text}{self.cache_path} {self.readable_size} {('\n' + self.file_path) if self.file_path else ''}\
-{('\n' + self.file_url) if self.file_url else ''}",
-=======
         return "[图片]", "\n".join(
-            part for part in [
+            part
+            for part in [
                 f"{self.text}{self.cache_path} {self.readable_size}",
                 self.file_path,
-                self.file_url
-            ] if part
->>>>>>> upstream/main
+                self.file_url,
+            ]
+            if part
         )
 
 
